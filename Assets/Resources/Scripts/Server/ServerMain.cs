@@ -138,6 +138,9 @@ namespace Realms.Server
             if (player != null)
             {
                 m_players.Remove(player);
+
+                var disconnectPacket = new Server.Packet.PlayerDisconnectPacket(player.ConnectionId);
+                QueuePacketAll(disconnectPacket);
             }
         }
 
