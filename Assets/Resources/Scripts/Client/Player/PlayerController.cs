@@ -6,8 +6,6 @@ namespace Realms.Client.Player
 {
     public class PlayerController : MonoBehaviour
     {
-        public Camera Camera;
-
         private Vector3 lastLocation;
         private NavMeshAgent navAgent;
         private PlayerControls playerControls;
@@ -26,14 +24,12 @@ namespace Realms.Client.Player
         {
             if (playerControls.MouseLeft.IsPressed)
             {
-                Debug.Log("Mouse clicked");
+                var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 RaycastHit hit;
-                Ray ray = Camera.ScreenPointToRay(Input.mousePosition);
                 Physics.Raycast(ray, out hit);
 
                 if (hit.collider)
                 {
-                    Debug.Log("Moving to");
                     navAgent.destination = hit.point;
                 }
             }
