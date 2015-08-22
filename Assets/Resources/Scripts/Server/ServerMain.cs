@@ -276,7 +276,7 @@ namespace Realms.Server
             if (allowConnection)
             {
                 // Player is valid, store them
-                var newPlayerData = new PlayerData(connectionId, packet.Username, new Vector3(-130.0f, 66.5f, 212.0f));
+                var newPlayerData = new PlayerData(connectionId, packet.Username, new Vector3(-280.0f, 47.5f, 338.0f));
                 
                 // Player is valid, tell all other players about them.
                 var playerJoinPacket = new Server.Packet.PlayerJoinPacket(connectionId, newPlayerData.Username, newPlayerData.CurrentPosition);
