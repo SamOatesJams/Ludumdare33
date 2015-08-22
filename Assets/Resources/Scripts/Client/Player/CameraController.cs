@@ -6,9 +6,14 @@ namespace Realms.Client.Player
     public class CameraController : MonoBehaviour
     {
         public GameObject Player;
+
         public float ZoomSensitivity;
+        public float ZoomKeyboardSensitivity;
         public float LookXSensitvity;
         public float LookYSensitvity;
+
+        public float ZoomMax = 90;
+        public float ZoomMin = 30;
 
         private Vector3 LastPos;
 
@@ -40,14 +45,21 @@ namespace Realms.Client.Player
             // Check for rotation
             if (playerController.PlayerControls.LookButton.IsPressed)
             {
-                transform.RotateAround(Player.transform.position, Vector3.up, playerController.PlayerControls.Look.X * LookXSensitvity);
-                transform.RotateAround(Player.transform.position, transform.right, playerController.PlayerControls.Look.Y * LookYSensitvity);
+                transform.RotateAround(Player.transform.position, Vector3.up, playerController.PlayerControls.LookMouse.X * LookXSensitvity);
+                transform.RotateAround(Player.transform.position, transform.right, playerController.PlayerControls.LookMouse.Y * LookYSensitvity);
             }
+
+            transform.RotateAround(Player.transform.position, Vector3.up, playerController.PlayerControls.LookKeyboard.X * LookXSensitvity);
+            transform.RotateAround(Player.transform.position, transform.right, playerController.PlayerControls.LookKeyboard.Y * LookYSensitvity);
 
             // Check for zoom
             var camera = GetComponent<Camera>();
-            var value = camera.fieldOfView + (playerController.PlayerControls.Zoom.Value * ZoomSensitivity);
-            value = Mathf.Clamp(value, 30, 90);
+
+            var value = camera.fieldOfView;
+            value += playerController.PlayerControls.Zoom.Value * ZoomSensitivity;
+            value += playerController.PlayerControls.ZoomKeyboard.Value * ZoomKeyboardSensitivity;
+            value = Mathf.Clamp(value, ZoomMin, ZoomMax);
+
             camera.fieldOfView = value;
         }
     }

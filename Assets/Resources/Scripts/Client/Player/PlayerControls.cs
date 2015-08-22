@@ -13,13 +13,23 @@ namespace Realms.Client.Player
         public PlayerAction ZoomOut;
         public PlayerOneAxisAction Zoom;
 
+        public PlayerAction ZoomKeyboardIn;
+        public PlayerAction ZoomKeyboardOut;
+        public PlayerOneAxisAction ZoomKeyboard;
+
         public PlayerAction LookButton;
 
-        public PlayerAction LookPositiveX;
-        public PlayerAction LookPositiveY;
-        public PlayerAction LookNegativeX;
-        public PlayerAction LookNegativeY;
-        public PlayerTwoAxisAction Look;
+        public PlayerAction MousePositiveX;
+        public PlayerAction MousePositiveY;
+        public PlayerAction MouseNegativeX;
+        public PlayerAction MouseNegativeY;
+        public PlayerTwoAxisAction LookMouse;
+
+        public PlayerAction KeyboardPositiveX;
+        public PlayerAction KeyboardPositiveY;
+        public PlayerAction KeyboardNegativeX;
+        public PlayerAction KeyboardNegativeY;
+        public PlayerTwoAxisAction LookKeyboard;
 
         public PlayerControls()
         {
@@ -28,15 +38,25 @@ namespace Realms.Client.Player
 
             LookButton = CreatePlayerAction("Mouse look");
 
-            ZoomIn = CreatePlayerAction("Zoom in");
-            ZoomOut = CreatePlayerAction("Zoom out");
+            ZoomIn = CreatePlayerAction("Zoom in (mouse)");
+            ZoomOut = CreatePlayerAction("Zoom out (mouse)");
             Zoom = CreateOneAxisPlayerAction(ZoomIn, ZoomOut);
 
-            LookPositiveX = CreatePlayerAction("Look positive X");
-            LookPositiveY = CreatePlayerAction("Look positive Y");
-            LookNegativeX = CreatePlayerAction("Look negative X");
-            LookNegativeY = CreatePlayerAction("Look negative Y");
-            Look = CreateTwoAxisPlayerAction(LookNegativeX, LookPositiveX, LookNegativeY, LookPositiveY);
+            ZoomKeyboardIn = CreatePlayerAction("Zoom in (keyboard)");
+            ZoomKeyboardOut = CreatePlayerAction("Zoom out (keyboard)");
+            ZoomKeyboard = CreateOneAxisPlayerAction(ZoomKeyboardIn, ZoomKeyboardOut);
+
+            MousePositiveX = CreatePlayerAction("Look positive X (mouse)");
+            MousePositiveY = CreatePlayerAction("Look positive Y (mouse)");
+            MouseNegativeX = CreatePlayerAction("Look negative X (mouse)");
+            MouseNegativeY = CreatePlayerAction("Look negative Y (mouse)");
+            LookMouse = CreateTwoAxisPlayerAction(MouseNegativeX, MousePositiveX, MouseNegativeY, MousePositiveY);
+
+            KeyboardPositiveX = CreatePlayerAction("Look positive X (keyboard)");
+            KeyboardPositiveY = CreatePlayerAction("Look positive Y (keyboard)");
+            KeyboardNegativeX = CreatePlayerAction("Look negative X (keyboard)");
+            KeyboardNegativeY = CreatePlayerAction("Look negative Y (keyboard)");
+            LookKeyboard = CreateTwoAxisPlayerAction(KeyboardNegativeX, KeyboardPositiveX, KeyboardNegativeY, KeyboardPositiveY);
         }
 
         public void SetupControls()
@@ -49,10 +69,18 @@ namespace Realms.Client.Player
             ZoomIn.AddDefaultBinding(Mouse.PositiveScrollWheel);
             ZoomOut.AddDefaultBinding(Mouse.NegativeScrollWheel);
 
-            LookPositiveX.AddDefaultBinding(Mouse.PositiveX);
-            LookPositiveY.AddDefaultBinding(Mouse.PositiveY);
-            LookNegativeX.AddDefaultBinding(Mouse.NegativeX);
-            LookNegativeY.AddDefaultBinding(Mouse.NegativeY);
+            ZoomKeyboardIn.AddDefaultBinding(Key.PageUp);
+            ZoomKeyboardOut.AddDefaultBinding(Key.PageDown);
+            
+            MousePositiveX.AddDefaultBinding(Mouse.PositiveX);
+            MousePositiveY.AddDefaultBinding(Mouse.PositiveY);
+            MouseNegativeX.AddDefaultBinding(Mouse.NegativeX);
+            MouseNegativeY.AddDefaultBinding(Mouse.NegativeY);
+
+            KeyboardPositiveX.AddDefaultBinding(Key.A);
+            KeyboardPositiveY.AddDefaultBinding(Key.W);
+            KeyboardNegativeX.AddDefaultBinding(Key.D);
+            KeyboardNegativeY.AddDefaultBinding(Key.S);
         }
     }
 }
