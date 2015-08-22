@@ -1,12 +1,10 @@
-﻿using UnityEngine;
-using System.Collections;
-using UnityEngine.Networking;
-using Realms.Common.Packet;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Realms.Common.Packet;
 using System;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Realms.Client
 {
@@ -27,6 +25,11 @@ namespace Realms.Client
         /// The address of the server
         /// </summary>
         public string ServerIP = "5.189.158.88";
+
+        /// <summary>
+        /// The prefab to create when a player joins
+        /// </summary>
+        public GameObject RemotePlayerPrefab = null;
         #endregion
 
         #region Private Members
@@ -54,6 +57,16 @@ namespace Realms.Client
         /// 
         /// </summary>
         private Dictionary<Type, IPacket> m_packetQueue = new Dictionary<Type, IPacket>();
+
+        /// <summary>
+        /// All packet handlers
+        /// </summary>
+        private Dictionary<Type, System.Action<IPacket, int, int>> m_packetHandlers = new Dictionary<Type, Action<IPacket, int, int>>();
+
+        /// <summary>
+        /// All connected remote players
+        /// </summary>
+        private Dictionary<int, RemoteClient> m_remotePlayers = new Dictionary<int, RemoteClient>();
         #endregion
 
         /// <summary>
@@ -75,8 +88,12 @@ namespace Realms.Client
             {
                 Debug.LogError(string.Format("Failed to connect to {0}:{1}", this.ServerIP, this.ServerPort));
             }
+
+            m_packetHandlers[typeof(Server.Packet.PlayerHandshakePacket)] = OnPlayerHandshakePacket;
+            m_packetHandlers[typeof(Server.Packet.PlayerJoinPacket)] = OnPlayerJoinPacket;
+            m_packetHandlers[typeof(Server.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
         }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -107,6 +124,7 @@ namespace Realms.Client
                 case NetworkEventType.DataEvent:
                     {
                         Debug.Log(string.Format("Client: DataEvent from host {0} connection {1}", hostId, connectionId));
+                        HandlePacketRecieved(hostId, connectionId, recBuffer, dataSize);
                     }
                     break;
 
@@ -128,8 +146,35 @@ namespace Realms.Client
         /// </summary>
         private void HandleClientConnectionEvent()
         {
-            var packet = new Realms.Client.Packet.PlayerConnectPacket(string.Format("Player_{0}", m_connectionId));
+            var packet = new Realms.Client.Packet.PlayerConnectPacket(string.Format("Player_{0}", UnityEngine.Random.Range(float.MinValue, float.MaxValue)));
             QueuePacket(packet);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        /// <param name="data"></param>
+        /// <param name="dataSize"></param>
+        private void HandlePacketRecieved(int hostId, int connectionId, byte[] data, int dataSize)
+        {
+            var formatter = new BinaryFormatter();
+
+            using (var stream = new MemoryStream(data))
+            {
+                IPacket packet = formatter.Deserialize(stream) as IPacket;
+                if (packet != null)
+                {
+                    if (!m_packetHandlers.ContainsKey(packet.PacketType))
+                    {
+                        Debug.LogError(string.Format("Client: Unknown packet type {0}", packet.PacketType.ToString()));
+                        return;
+                    }
+
+                    m_packetHandlers[packet.PacketType](packet, hostId, connectionId);
+                }
+            }
         }
 
         /// <summary>
@@ -164,6 +209,71 @@ namespace Realms.Client
         public void QueuePacket(IPacket packet)
         {
             m_packetQueue[packet.PacketType] = packet;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnPlayerHandshakePacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.PlayerHandshakePacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            Debug.Log(string.Format("Client: Recieved PlayerHandshakePacket.\nAllowed: {0}, Error: {1}", packet.AllowConnection, packet.ErrorMessage));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnPlayerJoinPacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.PlayerJoinPacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            var remotePlayer = (GameObject)GameObject.Instantiate(RemotePlayerPrefab);
+            remotePlayer.name = "RemotePlayer " + packet.Username;
+            remotePlayer.transform.position = packet.GetPosition();
+
+            var remoteClient = remotePlayer.GetComponent<RemoteClient>();
+            remoteClient.Username = packet.Username;
+            
+            m_remotePlayers[packet.ConnectionId] = remoteClient;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnPlayerMovePacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.PlayerMovePacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            var remoteConnectionId = packet.ConnectionId;
+            if (!m_remotePlayers.ContainsKey(remoteConnectionId))
+            {
+                return;
+            }
+
+            var remotePlayer = m_remotePlayers[remoteConnectionId];
+            remotePlayer.HandleMovePacket(packet);
         }
     }
 }
