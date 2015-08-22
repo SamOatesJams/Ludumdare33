@@ -21,7 +21,7 @@ namespace Realms.Client.Player
         void Start()
         {
             Player = GameObject.FindGameObjectsWithTag("LocalPlayer")[0];
-
+            
             if (Player == null)
             {
                 Debug.LogError("Could not find player");
