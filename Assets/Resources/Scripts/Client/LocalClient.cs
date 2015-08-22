@@ -1,6 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.Networking;
+using Realms.Common.Packet;
+using System.Collections.Generic;
+using System.Linq;
+using System;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace Realms.Client
 {
@@ -43,12 +49,17 @@ namespace Realms.Client
         /// 
         /// </summary>
         private int m_connectionId = -1;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private Dictionary<Type, IPacket> m_packetQueue = new Dictionary<Type, IPacket>();
         #endregion
 
         /// <summary>
         /// 
         /// </summary>
-        void Start()
+        private void Start()
         {
             m_configuration = new ConnectionConfig();
             m_communicationChannel = m_configuration.AddChannel(QosType.Reliable);
@@ -60,44 +71,98 @@ namespace Realms.Client
 
             byte error;
             m_connectionId = NetworkTransport.Connect(m_genericHostId, this.ServerIP, this.ServerPort, 0, out error);
+            if (error != 0 || m_connectionId == 0)
+            {
+                Debug.LogError(string.Format("Failed to connect to {0}:{1}", this.ServerIP, this.ServerPort));
+            }
         }
-
+        
         /// <summary>
         /// 
         /// </summary>
-        void FixedUpdate()
+        private void FixedUpdate()
         {
             const int bufferSize = 1024;
 
-            int recHostId, connectionId, channelId, dataSize;
+            int hostId, connectionId, channelId, dataSize;
             byte[] recBuffer = new byte[bufferSize];
             byte error;
 
-            var dataEvent = NetworkTransport.Receive(out recHostId, out connectionId, out channelId, recBuffer, bufferSize, out dataSize, out error);
+            var dataEvent = NetworkTransport.Receive(out hostId, out connectionId, out channelId, recBuffer, bufferSize, out dataSize, out error);
 
             switch (dataEvent)
             {
+                case NetworkEventType.Nothing:
+                    {
+                        
+                    }
+                    break;
+
                 case NetworkEventType.ConnectEvent:
                     {
-                        Debug.Log(string.Format("Client: ConnectEvent from host {0} connection {1}", recHostId, connectionId));
+                        HandleClientConnectionEvent();
+                        SendQueuedPackets(hostId, connectionId);
                     }
                     break;
 
                 case NetworkEventType.DataEvent:
                     {
-                        Debug.Log(string.Format("Client: DataEvent from host {0} connection {1}", recHostId, connectionId));
+                        Debug.Log(string.Format("Client: DataEvent from host {0} connection {1}", hostId, connectionId));
                     }
                     break;
 
                 case NetworkEventType.DisconnectEvent:
                     {
-                        Debug.Log(string.Format("Client: DisconnectEvent from host {0} connection {1}", recHostId, connectionId));
+                        Debug.Log(string.Format("Client: DisconnectEvent from host {0} connection {1}", hostId, connectionId));
                     }
                     break;
 
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void HandleClientConnectionEvent()
+        {
+            var packet = new Realms.Client.Packet.PlayerConnectPacket(string.Format("Player_{0}", m_connectionId));
+            QueuePacket(packet);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void SendQueuedPackets(int hostId, int connectionId)
+        {
+            byte error;
+            var formatter = new BinaryFormatter();
+
+            foreach (var packet in m_packetQueue.Values)
+            {
+                Debug.Log(string.Format("Client: Sending Packet {0}", packet.PacketType.ToString()));
+
+                using (var stream = new MemoryStream())
+                {
+                    formatter.Serialize(stream, packet);
+                    var data = stream.ToArray();
+                    NetworkTransport.Send(hostId, connectionId, m_communicationChannel, data, data.Length, out error);
+                }
+            }
+
+            m_packetQueue.Clear();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="packet"></param>
+        public void QueuePacket(IPacket packet)
+        {
+            m_packetQueue[packet.PacketType] = packet;
         }
     }
 }
