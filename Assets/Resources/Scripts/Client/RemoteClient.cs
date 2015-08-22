@@ -12,7 +12,21 @@ namespace Realms.Client
         /// <summary>
         /// 
         /// </summary>
-        public string Username { get; set; }
+        private string m_username = string.Empty;
+        public string Username
+        {
+            get { return m_username; }
+            set
+            {
+                m_username = value;
+                UsernameText.text = m_username;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public UnityEngine.UI.Text UsernameText = null;
         #endregion
 
         #region Private Members
