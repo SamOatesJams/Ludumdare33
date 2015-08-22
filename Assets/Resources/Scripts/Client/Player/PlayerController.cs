@@ -8,9 +8,13 @@ namespace Realms.Client.Player
     [RequireComponent(typeof(NavMeshAgent))]
     public class PlayerController : MonoBehaviour
     {
+        public PlayerControls PlayerControls
+        {
+            get; set;
+        }
+
         private Vector3 lastLocation;
         private NavMeshAgent navAgent;
-        private PlayerControls playerControls;
         private LocalClient m_localClient;
         private bool m_didPlayerClick = false;
 
@@ -21,15 +25,15 @@ namespace Realms.Client.Player
 
             navAgent = GetComponent<NavMeshAgent>();
 
-            playerControls = new PlayerControls();
-            playerControls.SetupControls();
+            PlayerControls = new PlayerControls();
+            PlayerControls.SetupControls();
         }
 
         void Update()
         {
             if (!m_didPlayerClick)
             {
-                m_didPlayerClick = playerControls.MouseLeft.WasPressed;
+                m_didPlayerClick = PlayerControls.MouseLeft.WasPressed;
             }
         }
 
