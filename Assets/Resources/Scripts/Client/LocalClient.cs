@@ -144,6 +144,16 @@ namespace Realms.Client
         /// <summary>
         /// 
         /// </summary>
+        private void OnApplicationQuit()
+        {
+            byte error;
+            NetworkTransport.Disconnect(m_genericHostId, m_connectionId, out error);
+            NetworkTransport.Shutdown();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         private void HandleClientConnectionEvent()
         {
             var packet = new Realms.Client.Packet.PlayerConnectPacket(string.Format("Player_{0}", UnityEngine.Random.Range(float.MinValue, float.MaxValue)));

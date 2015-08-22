@@ -116,6 +116,7 @@ namespace Realms.Server
                 case NetworkEventType.DisconnectEvent:
                     {
                         Debug.Log(string.Format("Server: DisconnectEvent from host {0} connection {1}", hostId, connectionId));
+                        HandlePlayerDisconnect(hostId, connectionId);
                     }
                     break;
 
@@ -124,6 +125,20 @@ namespace Realms.Server
             }
 
             SendQueuedPackets();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void HandlePlayerDisconnect(int hostId, int connectionId)
+        {
+            var player = m_players.FirstOrDefault(x => x.ConnectionId == connectionId);
+            if (player != null)
+            {
+                m_players.Remove(player);
+            }
         }
 
         /// <summary>
