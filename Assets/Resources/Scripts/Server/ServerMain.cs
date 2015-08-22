@@ -83,6 +83,7 @@ namespace Realms.Server
 
             m_packetHandlers[typeof(Client.Packet.PlayerConnectPacket)] = OnPlayerConnectPacket;
             m_packetHandlers[typeof(Client.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
+            m_packetHandlers[typeof(Client.Packet.PlayerChatSendPacket)] = OnPlayerChatSendPacket;
         }
 
         /// <summary>
@@ -320,6 +321,24 @@ namespace Realms.Server
 
             var movementPacket = new Server.Packet.PlayerMovePacket(connectionId, packet.GetPosition());
             QueuePacketAllExcluding(movementPacket, new int[] { connectionId });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnPlayerChatSendPacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Client.Packet.PlayerChatSendPacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            var chatPacket = new Server.Packet.PlayerChatPacket(connectionId, packet.ChatMessage);
+            QueuePacketAllExcluding(chatPacket, new int[] { connectionId });
         }
     }
 }

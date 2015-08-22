@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Linq;
 
 namespace Realms.Client.Player
 {
@@ -49,8 +50,11 @@ namespace Realms.Client.Player
                 transform.RotateAround(Player.transform.position, transform.right, playerController.PlayerControls.LookMouse.Y * LookYSensitvity);
             }
 
-            transform.RotateAround(Player.transform.position, Vector3.up, playerController.PlayerControls.LookKeyboard.X * LookXSensitvity);
-            transform.RotateAround(Player.transform.position, transform.right, playerController.PlayerControls.LookKeyboard.Y * LookYSensitvity);
+            if (!IsUiActive())
+            {
+                transform.RotateAround(Player.transform.position, Vector3.up, playerController.PlayerControls.LookKeyboard.X * LookXSensitvity);
+                transform.RotateAround(Player.transform.position, transform.right, playerController.PlayerControls.LookKeyboard.Y * LookYSensitvity);
+            }
 
             // Check for zoom
             var camera = GetComponent<Camera>();
@@ -61,6 +65,25 @@ namespace Realms.Client.Player
             value = Mathf.Clamp(value, ZoomMin, ZoomMax);
 
             camera.fieldOfView = value;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private bool IsUiActive()
+        {
+            var inputFields = GameObject.FindGameObjectsWithTag("UIPanel").Select(x => x.GetComponentInChildren<UnityEngine.UI.InputField>());
+
+            foreach (var inputField in inputFields)
+            {
+                if (inputField.isFocused)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using InControl;
 using System.Collections;
+using System.Linq;
 
 namespace Realms.Client.Player
 {
@@ -31,7 +32,7 @@ namespace Realms.Client.Player
 
         void Update()
         {
-            if (!m_didPlayerClick)
+            if (!m_didPlayerClick && !IsMouseOverUI())
             {
                 m_didPlayerClick = PlayerControls.MouseLeft.WasPressed;
             }
@@ -54,6 +55,31 @@ namespace Realms.Client.Player
                     SendMovementPacket(hit.point);
                 }
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private bool IsMouseOverUI()
+        {
+            var rects = GameObject.FindGameObjectsWithTag("UIPanel").Select(x => x.GetComponent<RectTransform>());
+
+            var mousePosition = Input.mousePosition;
+            var worldCorners = new Vector3[4];
+
+            foreach (var rect in rects)
+            {
+                rect.GetWorldCorners(worldCorners);
+
+                if (mousePosition.x >= worldCorners[0].x && mousePosition.x < worldCorners[2].x
+                   && mousePosition.y >= worldCorners[0].y && mousePosition.y < worldCorners[2].y)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

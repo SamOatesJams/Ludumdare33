@@ -93,6 +93,7 @@ namespace Realms.Client
             m_packetHandlers[typeof(Server.Packet.PlayerJoinPacket)] = OnPlayerJoinPacket;
             m_packetHandlers[typeof(Server.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
             m_packetHandlers[typeof(Server.Packet.PlayerDisconnectPacket)] = OnPlayerDisconnectPacket;
+            m_packetHandlers[typeof(Server.Packet.PlayerChatPacket)] = OnPlayerChatPacket;
         }
 
         /// <summary>
@@ -310,6 +311,32 @@ namespace Realms.Client
             GameObject.Destroy(remotePlayer.gameObject);
 
             m_remotePlayers.Remove(remoteConnectionId);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnPlayerChatPacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.PlayerChatPacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            var remoteConnectionId = packet.ConnectionId;
+            if (!m_remotePlayers.ContainsKey(remoteConnectionId))
+            {
+                return;
+            }
+
+            var remotePlayer = m_remotePlayers[remoteConnectionId];
+
+            var chatBox = GameObject.FindObjectOfType<Chat.ChatInputField>();
+            chatBox.AddMessage(remotePlayer.Username, packet.ChatMessage);
         }
     }
 }
