@@ -253,10 +253,9 @@ namespace Realms.Client
                 return;
             }
 
-            var remotePlayer = (GameObject)GameObject.Instantiate(RemotePlayerPrefab);
+            var remotePlayer = (GameObject)GameObject.Instantiate(RemotePlayerPrefab, packet.GetPosition(), Quaternion.identity);
             remotePlayer.name = "RemotePlayer " + packet.Username;
-            remotePlayer.transform.position = packet.GetPosition();
-
+            
             var remoteClient = remotePlayer.GetComponent<RemoteClient>();
             remoteClient.Username = packet.Username;
             
