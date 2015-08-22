@@ -1,12 +1,11 @@
-﻿using UnityEngine;
-using System.Collections;
-using UnityEngine.Networking;
+﻿using Realms.Common.Packet;
 using System;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
-using Realms.Common.Packet;
 using System.Collections.Generic;
-using Realms.Client.Packet;
+using System.IO;
+using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
+using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Realms.Server
 {
@@ -48,7 +47,17 @@ namespace Realms.Server
         /// <summary>
         /// All packet handlers
         /// </summary>
-        Dictionary<Type, System.Action<IPacket, int, int>> m_packetHandlers = new Dictionary<Type, Action<IPacket, int, int>>();
+        private Dictionary<Type, System.Action<IPacket, int, int>> m_packetHandlers = new Dictionary<Type, Action<IPacket, int, int>>();
+
+        /// <summary>
+        /// All connected players
+        /// </summary>
+        private HashSet<PlayerData> m_players = new HashSet<PlayerData>();
+
+        /// <summary>
+        /// All queued packets to be sent to players
+        /// </summary>
+        private HashSet<ServerPacket> m_packetQueue = new HashSet<ServerPacket>();
         #endregion
 
         /// <summary>
@@ -72,8 +81,8 @@ namespace Realms.Server
                 m_genericHostId)
             );
 
-            m_packetHandlers[typeof(PlayerConnectPacket)] = OnPlayerConnectPacket;
-            m_packetHandlers[typeof(PlayerMovePacket)] = OnPlayerMovePacket;
+            m_packetHandlers[typeof(Client.Packet.PlayerConnectPacket)] = OnPlayerConnectPacket;
+            m_packetHandlers[typeof(Client.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
         }
 
         /// <summary>
@@ -113,6 +122,83 @@ namespace Realms.Server
                 default:
                     break;
             }
+
+            SendQueuedPackets();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void SendQueuedPackets()
+        {
+            byte error;
+            var formatter = new BinaryFormatter();
+
+            foreach (var serverPacket in m_packetQueue)
+            {
+                var packet = serverPacket.Packet;
+                var packetType = serverPacket.SendType;
+
+                using (var stream = new MemoryStream())
+                {
+                    formatter.Serialize(stream, packet);
+                    var data = stream.ToArray();
+
+                    if (packetType == ServerPacketType.ToConnection)
+                    {
+                        // Send to specific player
+                        NetworkTransport.Send(m_genericHostId, serverPacket.ConnectionId, m_communicationChannel, data, data.Length, out error);
+                        Debug.Log(string.Format("Server: Sending Packet {0} to connection {1}", packet.PacketType.ToString(), serverPacket.ConnectionId));
+                    }
+                    else if (packetType == ServerPacketType.ToAllExcluding)
+                    {
+                        foreach (var player in m_players.Where(x => !serverPacket.Excluding.Any(y => y == x.ConnectionId)))
+                        {
+                            // Send to all players, excluding some listed
+                            NetworkTransport.Send(m_genericHostId, player.ConnectionId, m_communicationChannel, data, data.Length, out error);
+                            Debug.Log(string.Format("Server: Sending Packet {0} to connection {1}", packet.PacketType.ToString(), player.ConnectionId));
+                        }
+                    }
+                    else if (packetType == ServerPacketType.ToAll)
+                    {
+                        foreach (var player in m_players)
+                        {
+                            // Send to all players
+                            NetworkTransport.Send(m_genericHostId, player.ConnectionId, m_communicationChannel, data, data.Length, out error);
+                            Debug.Log(string.Format("Server: Sending Packet {0} to connection {1}", packet.PacketType.ToString(), player.ConnectionId));
+                        }
+                    }
+                }
+            }
+
+            m_packetQueue.Clear();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="packet"></param>
+        public void QueuePacket(IPacket packet, int connectionId)
+        {
+            m_packetQueue.Add(new ServerPacket(ServerPacketType.ToConnection, packet, connectionId));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="packet"></param>
+        public void QueuePacketAllExcluding(IPacket packet, IEnumerable<int> excludedConnectionIds)
+        {
+            m_packetQueue.Add(new ServerPacket(ServerPacketType.ToAllExcluding, packet, excludedConnectionIds));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="packet"></param>
+        public void QueuePacketAll(IPacket packet)
+        {
+            m_packetQueue.Add(new ServerPacket(ServerPacketType.ToAll, packet));
         }
 
         /// <summary>
@@ -150,10 +236,41 @@ namespace Realms.Server
         /// <param name="connectionId"></param>
         private void OnPlayerConnectPacket(IPacket rawPacket, int hostId, int connectionId)
         {
-            var packet = rawPacket as PlayerConnectPacket;
+            var packet = rawPacket as Client.Packet.PlayerConnectPacket;
             if (packet == null)
             {
                 return;
+            }
+
+            var allowConnection = true;
+            var errorMessage = "None";
+            if (m_players.Any(x => x.Username.Equals(packet.Username, StringComparison.OrdinalIgnoreCase)))
+            {
+                // Username already in use.
+                allowConnection = false;
+                errorMessage = string.Format("The username {0} is already in use.", packet.Username);
+                Debug.LogError(string.Format("Server: {0}", errorMessage));
+            }
+
+            var handShakePacket = new Server.Packet.PlayerHandshakePacket(allowConnection, errorMessage);
+            QueuePacket(handShakePacket, connectionId);
+
+            if (allowConnection)
+            {
+                // Player is valid, store them
+                var newPlayerData = new PlayerData(connectionId, packet.Username, new Vector3(-130.0f, 66.5f, 212.0f));
+                
+                // Player is valid, tell all other players about them.
+                var playerJoinPacket = new Server.Packet.PlayerJoinPacket(connectionId, newPlayerData.Username, newPlayerData.CurrentPosition);
+                QueuePacketAllExcluding(playerJoinPacket, new int[] { connectionId });
+
+                foreach (var player in m_players)
+                {
+                    var otherPlayerJoinPack = new Server.Packet.PlayerJoinPacket(player.ConnectionId, player.Username, player.CurrentPosition);
+                    QueuePacket(otherPlayerJoinPack, connectionId);
+                }
+
+                m_players.Add(newPlayerData);
             }
 
             Debug.Log(string.Format("Server: Revieved player connection from {0}", packet.Username));
@@ -167,13 +284,24 @@ namespace Realms.Server
         /// <param name="connectionId"></param>
         private void OnPlayerMovePacket(IPacket rawPacket, int hostId, int connectionId)
         {
-            var packet = rawPacket as PlayerMovePacket;
+            var packet = rawPacket as Client.Packet.PlayerMovePacket;
             if (packet == null)
             {
                 return;
             }
 
-            Debug.Log(string.Format("Server: Revieved player movement packet, target {0}", packet.GetPosition().ToString()));
+            var player = m_players.FirstOrDefault(x => x.ConnectionId == connectionId);
+            if (player == null)
+            {
+                return;
+            }
+
+            player.CurrentPosition = packet.GetPosition();
+
+            Debug.Log(string.Format("Server: Revieved player movement packet from {0}, target {1}", connectionId, packet.GetPosition().ToString()));
+
+            var movementPacket = new Server.Packet.PlayerMovePacket(connectionId, packet.GetPosition());
+            QueuePacketAllExcluding(movementPacket, new int[] { connectionId });
         }
     }
 }
