@@ -5,7 +5,7 @@ namespace Realms.Client.Player
 {
     public class CameraController : MonoBehaviour
     {
-        public GameObject Player;
+        private GameObject Player;
 
         public float ZoomSensitivity;
         public float ZoomKeyboardSensitivity;
@@ -20,7 +20,7 @@ namespace Realms.Client.Player
         // Use this for initialization
         void Start()
         {
-            Player = GameObject.FindGameObjectsWithTag("LocalPlayer")[0];
+            Player = GameObject.FindGameObjectWithTag("LocalPlayer");
             
             if (Player == null)
             {
@@ -33,7 +33,7 @@ namespace Realms.Client.Player
         }
 
         // Update is called once per frame
-        void FixedUpdate()
+        void LateUpdate()
         {
             // Update position to follow player
             var movement = Player.transform.position - LastPos;
