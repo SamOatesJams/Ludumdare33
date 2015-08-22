@@ -14,10 +14,10 @@ August 2015, 22th - 25th.
 Jam competition.
 
 ##Theme
-
+You are the monster
 
 ##Game Information
-
+MMO where you play as the monster
 
 ##Required Tools
 To create this project the following tools were used:
