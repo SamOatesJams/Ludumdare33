@@ -101,7 +101,6 @@ namespace Realms.Client
                 case NetworkEventType.ConnectEvent:
                     {
                         HandleClientConnectionEvent();
-                        SendQueuedPackets(hostId, connectionId);
                     }
                     break;
 
@@ -120,6 +119,8 @@ namespace Realms.Client
                 default:
                     break;
             }
+
+            SendQueuedPackets(m_genericHostId, m_connectionId);
         }
 
         /// <summary>

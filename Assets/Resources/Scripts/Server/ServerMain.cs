@@ -73,6 +73,7 @@ namespace Realms.Server
             );
 
             m_packetHandlers[typeof(PlayerConnectPacket)] = OnPlayerConnectPacket;
+            m_packetHandlers[typeof(PlayerMovePacket)] = OnPlayerMovePacket;
         }
 
         /// <summary>
@@ -130,10 +131,13 @@ namespace Realms.Server
                 IPacket packet = formatter.Deserialize(stream) as IPacket;
                 if (packet != null)
                 {
-                    if (m_packetHandlers.ContainsKey(packet.PacketType))
+                    if (!m_packetHandlers.ContainsKey(packet.PacketType))
                     {
-                        m_packetHandlers[packet.PacketType](packet, hostId, connectionId);
+                        Debug.LogError(string.Format("Server: Unknown packet type {0}", packet.PacketType.ToString()));
+                        return;
                     }
+
+                    m_packetHandlers[packet.PacketType](packet, hostId, connectionId);
                 }
             }
         }
@@ -153,6 +157,23 @@ namespace Realms.Server
             }
 
             Debug.Log(string.Format("Server: Revieved player connection from {0}", packet.Username));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnPlayerMovePacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as PlayerMovePacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            Debug.Log(string.Format("Server: Revieved player movement packet, target {0}", packet.GetPosition().ToString()));
         }
     }
 }
