@@ -334,9 +334,8 @@ namespace Realms.Client
             }
 
             var remotePlayer = m_remotePlayers[remoteConnectionId];
-
             var chatBox = GameObject.FindObjectOfType<Chat.ChatInputField>();
-            chatBox.AddMessage(remotePlayer.Username, packet.ChatMessage);
+            chatBox.HandleChatPacket(remotePlayer, packet.ChatMessage);
         }
     }
 }

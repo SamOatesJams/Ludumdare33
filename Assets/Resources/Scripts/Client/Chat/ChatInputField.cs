@@ -2,6 +2,7 @@
 using System.Collections;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Realms.Client.Chat
 {
@@ -25,9 +26,38 @@ namespace Realms.Client.Chat
         /// <summary>
         /// 
         /// </summary>
+        private Player.PlayerAnimationController m_localAnimationController = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private Dictionary<string, Player.PlayerEmote> m_customEmotes = new Dictionary<string, Player.PlayerEmote>();
+
+        /// <summary>
+        /// 
+        /// </summary>
         void Start()
         {
-            m_localClient = GameObject.FindGameObjectWithTag("LocalPlayer").GetComponent<LocalClient>();
+            var localPlayer = GameObject.FindGameObjectWithTag("LocalPlayer");
+            m_localClient = localPlayer.GetComponent<LocalClient>();
+            m_localAnimationController = localPlayer.GetComponent<Player.PlayerAnimationController>();
+
+            foreach (var emote in Enum.GetValues(typeof(Player.PlayerEmote)).Cast<Player.PlayerEmote>())
+            {
+                m_customEmotes["/" + emote.ToString().ToLower()] = emote;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void OnChatChange()
+        {
+            var chatMessage = this.InputField.text;
+            if (chatMessage.Length > 32)
+            {
+                this.InputField.text = chatMessage.Substring(0, 32);
+            }
         }
 
         /// <summary>
@@ -38,8 +68,16 @@ namespace Realms.Client.Chat
             var chatMessage = this.InputField.text;
             this.InputField.text = string.Empty;
 
-            AddMessage("You", chatMessage);
-
+            if (m_customEmotes.ContainsKey(chatMessage.ToLower()))
+            {
+                AddMessage("You", "Start to " + chatMessage.Substring(1));
+                m_localAnimationController.PerformEmote(m_customEmotes[chatMessage.ToLower()]);
+            }
+            else
+            {
+                AddMessage("You", chatMessage);
+            }
+            
             var chatSendPacket = new Realms.Client.Packet.PlayerChatSendPacket(chatMessage);
             m_localClient.QueuePacket(chatSendPacket);
         }
@@ -47,9 +85,27 @@ namespace Realms.Client.Chat
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="packet"></param>
+        public void HandleChatPacket(RemoteClient client, string chatMessage)
+        {
+            if (m_customEmotes.ContainsKey(chatMessage.ToLower()))
+            {
+                var animationController = client.GetComponent<Player.PlayerAnimationController>();
+                animationController.PerformEmote(m_customEmotes[chatMessage.ToLower()]);
+            }
+            else
+            {
+                AddMessage(client.Username, chatMessage);
+                client.SetChatLine(chatMessage);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="username"></param>
         /// <param name="chatMessage"></param>
-        public void AddMessage(string username, string chatMessage)
+        private void AddMessage(string username, string chatMessage)
         {
             var allText = this.MessageBox.text;
             allText += string.Format("{0}: {1}\n", username, chatMessage);

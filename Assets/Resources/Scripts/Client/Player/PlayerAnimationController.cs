@@ -1,8 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using System;
+using System.Linq;
 
 namespace Realms.Client.Player
 {
+    public enum PlayerEmote
+    {
+        Wave
+    }
+
     [RequireComponent(typeof(NavMeshAgent))]
     public class PlayerAnimationController : MonoBehaviour
     {
@@ -16,10 +24,17 @@ namespace Realms.Client.Player
         /// </summary>
         private Animator m_animator = null;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        private Dictionary<PlayerEmote, string> m_emoteToAnimationParameter = new Dictionary<PlayerEmote, string>();
+
         void Start()
         {
             m_navAgent = this.GetComponent<NavMeshAgent>();
             m_animator = this.GetComponentInChildren<Animator>();
+
+            m_emoteToAnimationParameter[PlayerEmote.Wave] = "IsWaving";
         }
 
         /// <summary>
@@ -35,6 +50,24 @@ namespace Realms.Client.Player
             }
 
             m_animator.SetBool("IsWalking", isWalking);
+        }
+
+        void LateUpdate()
+        {
+            // Turn off all emotes
+            foreach (var emote in Enum.GetValues(typeof(Player.PlayerEmote)).Cast<Player.PlayerEmote>())
+            {
+                m_animator.SetBool(m_emoteToAnimationParameter[emote], false);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="playerEmote"></param>
+        public void PerformEmote(PlayerEmote playerEmote)
+        {
+            m_animator.SetBool(m_emoteToAnimationParameter[playerEmote], true);
         }
     }
 }

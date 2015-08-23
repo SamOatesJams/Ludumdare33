@@ -34,6 +34,11 @@ namespace Realms.Client
         /// 
         /// </summary>
         private NavMeshAgent m_navAgent = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private float m_chatAddTime = 0.0f;
         #endregion
 
         /// <summary>
@@ -45,12 +50,44 @@ namespace Realms.Client
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        private void FixedUpdate()
+        {
+            if (m_chatAddTime > 0.0f && Time.time - m_chatAddTime >= 6.0f)
+            {
+                RemoveChatLine();
+                m_chatAddTime = 0.0f;
+            }
+        }
+
+        /// <summary>
         /// Called when a player move packet is received
         /// </summary>
         /// <param name="packet"></param>
         public void HandleMovePacket(PlayerMovePacket packet)
         {
             m_navAgent.SetDestination(packet.GetPosition());
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="chatMessage"></param>
+        public void SetChatLine(string chatMessage)
+        {
+            RemoveChatLine();
+            UsernameText.text += string.Format("\n{0}", chatMessage);
+            m_chatAddTime = Time.time;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void RemoveChatLine()
+        {
+            var lines = UsernameText.text.Split('\n');
+            UsernameText.text = lines[0];
         }
     }
 }
