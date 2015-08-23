@@ -27,6 +27,11 @@ namespace Realms.Client
         /// 
         /// </summary>
         public UnityEngine.UI.Text UsernameText = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public UnityEngine.UI.Text ChatText = null;
         #endregion
 
         #region Private Members
@@ -56,7 +61,7 @@ namespace Realms.Client
         {
             if (m_chatAddTime > 0.0f && Time.time - m_chatAddTime >= 6.0f)
             {
-                RemoveChatLine();
+                ChatText.text = string.Empty;
                 m_chatAddTime = 0.0f;
             }
         }
@@ -76,18 +81,8 @@ namespace Realms.Client
         /// <param name="chatMessage"></param>
         public void SetChatLine(string chatMessage)
         {
-            RemoveChatLine();
-            UsernameText.text += string.Format("\n{0}", chatMessage);
+            ChatText.text = string.Format("\n{0}", chatMessage);
             m_chatAddTime = Time.time;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private void RemoveChatLine()
-        {
-            var lines = UsernameText.text.Split('\n');
-            UsernameText.text = lines[0];
         }
     }
 }

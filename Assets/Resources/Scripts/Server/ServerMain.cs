@@ -65,6 +65,9 @@ namespace Realms.Server
         /// </summary>
         private void Start()
         {
+            // Multiplayer game, don't allow pausing
+            Application.runInBackground = true;
+
             m_configuration = new ConnectionConfig();
             m_communicationChannel = m_configuration.AddChannel(QosType.Reliable);
 
@@ -72,7 +75,10 @@ namespace Realms.Server
 
             var topology = new HostTopology(m_configuration, this.MaxConnections);
             m_webSocketHostId = NetworkTransport.AddWebsocketHost(topology, this.ServerPort, null);
+
+#if !UNITY_WEBGL
             m_genericHostId = NetworkTransport.AddHost(topology, this.ServerPort, null);
+#endif
 
             Debug.Log(string.Format("Server started.\nPort: {0}. Max Connections: {1}. WebSocketID: {2}.GenericHostID: {3}", 
                 this.ServerPort,

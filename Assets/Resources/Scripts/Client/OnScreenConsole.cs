@@ -37,7 +37,6 @@ public class OnScreenConsole : MonoBehaviour
 
     const int margin = 20;
 
-    Rect windowRect = new Rect(margin, margin, Screen.width - (margin * 2), Screen.height - (margin * 2));
     Rect titleBarRect = new Rect(0, 0, 10000, 20);
     GUIContent clearLabel = new GUIContent("Clear", "Clear the contents of the console.");
     GUIContent collapseLabel = new GUIContent("Collapse", "Hide repeated messages.");
@@ -67,7 +66,7 @@ public class OnScreenConsole : MonoBehaviour
             return;
         }
 
-        windowRect = GUILayout.Window(123456, windowRect, ConsoleWindow, "Console");
+        GUILayout.Window(123456, new Rect(margin, margin, Screen.width - (margin * 2), Screen.height - (margin * 2)), ConsoleWindow, "Console");
     }
 
     /// <summary>

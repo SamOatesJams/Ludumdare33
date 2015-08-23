@@ -79,6 +79,9 @@ namespace Realms.Client
         /// </summary>
         private void Start()
         {
+            // Multiplayer game, don't allow pausing
+            Application.runInBackground = true;
+
             m_configuration = new ConnectionConfig();
             m_communicationChannel = m_configuration.AddChannel(QosType.Reliable);
 
