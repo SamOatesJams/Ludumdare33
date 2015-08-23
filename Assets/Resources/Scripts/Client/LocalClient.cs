@@ -27,6 +27,11 @@ namespace Realms.Client
         public string ServerIP = "5.189.158.88";
 
         /// <summary>
+        /// 
+        /// </summary>
+        public string Username = null;
+
+        /// <summary>
         /// The prefab to create when a player joins
         /// </summary>
         public GameObject RemotePlayerPrefab = null;
@@ -94,6 +99,26 @@ namespace Realms.Client
             m_packetHandlers[typeof(Server.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
             m_packetHandlers[typeof(Server.Packet.PlayerDisconnectPacket)] = OnPlayerDisconnectPacket;
             m_packetHandlers[typeof(Server.Packet.PlayerChatPacket)] = OnPlayerChatPacket;
+
+            SetupUsername();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void SetupUsername()
+        {
+            var usernameField = GameObject.FindGameObjectWithTag("MainMenu") as GameObject;
+            if (usernameField != null && usernameField.GetComponent<MainMenu.MainMenuUI>())
+            {
+                var mainMenu = usernameField.GetComponent<MainMenu.MainMenuUI>();
+                this.Username = mainMenu.Username;
+            }
+            else
+            {
+                // Random Name
+                this.Username = string.Format("Player_{0}", UnityEngine.Random.Range(0, int.MaxValue));
+            }
         }
 
         /// <summary>
@@ -158,7 +183,7 @@ namespace Realms.Client
         /// </summary>
         private void HandleClientConnectionEvent()
         {
-            var packet = new Realms.Client.Packet.PlayerConnectPacket(string.Format("Player_{0}", UnityEngine.Random.Range(float.MinValue, float.MaxValue)));
+            var packet = new Realms.Client.Packet.PlayerConnectPacket(this.Username);
             QueuePacket(packet);
         }
 
@@ -238,6 +263,12 @@ namespace Realms.Client
             }
 
             Debug.Log(string.Format("Client: Recieved PlayerHandshakePacket.\nAllowed: {0}, Error: {1}", packet.AllowConnection, packet.ErrorMessage));
+
+            if (!packet.AllowConnection)
+            {
+                // TODO: Show error ui
+                Application.LoadLevel("Menu");
+            }
         }
 
         /// <summary>
