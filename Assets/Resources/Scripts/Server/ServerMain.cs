@@ -58,6 +58,11 @@ namespace Realms.Server
         /// All queued packets to be sent to players
         /// </summary>
         private HashSet<ServerPacket> m_packetQueue = new HashSet<ServerPacket>();
+
+        /// <summary>
+        /// All registered mobs
+        /// </summary>
+        private HashSet<Realms.Common.Mob> m_mobs = new HashSet<Common.Mob>();
         #endregion
 
         /// <summary>
@@ -296,6 +301,7 @@ namespace Realms.Server
                 }
 
                 m_players.Add(newPlayerData);
+                SendMobSpawnPackets(newPlayerData.ConnectionId);
             }
 
             Debug.Log(string.Format("Server: Revieved player connection from {0}", packet.Username));
@@ -345,6 +351,32 @@ namespace Realms.Server
 
             var chatPacket = new Server.Packet.PlayerChatPacket(connectionId, packet.ChatMessage);
             QueuePacketAllExcluding(chatPacket, new int[] { connectionId });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="mob"></param>
+        public void RegisterMob(Realms.Common.Mob mob)
+        {
+            m_mobs.Add(mob);
+            foreach (var player in m_players)
+            {
+                SendMobSpawnPackets(player.ConnectionId);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connectionId"></param>
+        private void SendMobSpawnPackets(int connectionId)
+        {
+            foreach (var mob in m_mobs)
+            {
+                var mobSpawnPacket = new Server.Packet.MobSpawnPacket(mob);
+                QueuePacket(mobSpawnPacket, connectionId);
+            }
         }
     }
 }

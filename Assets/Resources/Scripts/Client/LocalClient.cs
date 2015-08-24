@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -35,6 +36,11 @@ namespace Realms.Client
         /// The prefab to create when a player joins
         /// </summary>
         public GameObject RemotePlayerPrefab = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Common.Mob[] MobPrefabs = null;
         #endregion
 
         #region Private Members
@@ -72,6 +78,11 @@ namespace Realms.Client
         /// All connected remote players
         /// </summary>
         private Dictionary<int, RemoteClient> m_remotePlayers = new Dictionary<int, RemoteClient>();
+
+        /// <summary>
+        /// All living mobs
+        /// </summary>
+        private Dictionary<int, Common.Mob> m_mobs = new Dictionary<int, Common.Mob>();
         #endregion
 
         /// <summary>
@@ -102,6 +113,8 @@ namespace Realms.Client
             m_packetHandlers[typeof(Server.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
             m_packetHandlers[typeof(Server.Packet.PlayerDisconnectPacket)] = OnPlayerDisconnectPacket;
             m_packetHandlers[typeof(Server.Packet.PlayerChatPacket)] = OnPlayerChatPacket;
+            m_packetHandlers[typeof(Server.Packet.MobSpawnPacket)] = OnMobSpawnPacket;
+            m_packetHandlers[typeof(Server.Packet.MobMovePacket)] = OnMobMovePacket;
 
             SetupUsername();
         }
@@ -370,6 +383,63 @@ namespace Realms.Client
             var remotePlayer = m_remotePlayers[remoteConnectionId];
             var chatBox = GameObject.FindObjectOfType<Chat.ChatInputField>();
             chatBox.HandleChatPacket(remotePlayer, packet.ChatMessage);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnMobSpawnPacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.MobSpawnPacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            if (m_mobs.ContainsKey(packet.ID))
+            {
+                // This mob already exists
+                return;
+            }
+
+            var mobTypePrefab = this.MobPrefabs.FirstOrDefault(x => x.MobType.Equals(packet.MobType, StringComparison.OrdinalIgnoreCase));
+            if (mobTypePrefab == null)
+            {
+                // Mob type not registered on client
+                return;
+            }
+
+            var spawnLocation = packet.GetPosition();
+            var newMob = (GameObject)GameObject.Instantiate(mobTypePrefab, spawnLocation, Quaternion.identity); // Initial rotation should be in spawn packet
+            var mobComponent = newMob.GetComponent<Common.Mob>();
+            mobComponent.ID = packet.ID;
+            m_mobs[packet.ID] = mobComponent;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnMobMovePacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.MobMovePacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            if (!m_mobs.ContainsKey(packet.MobID))
+            {
+                return;
+            }
+
+            var mob = m_mobs[packet.MobID];
+            mob.HandleMovePacket(packet);
         }
     }
 }
