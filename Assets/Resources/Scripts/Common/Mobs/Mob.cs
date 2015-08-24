@@ -59,6 +59,11 @@ namespace Realms.Common
         /// </summary>
         private Realms.Server.ServerMain m_server = null;
 
+        public Mob()
+        {
+            this.ID = -1;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -68,13 +73,14 @@ namespace Realms.Common
             if (server != null)
             {
                 this.IsServer = true;
+                this.ID = this.gameObject.GetInstanceID();
+
                 m_server = server.GetComponent<Realms.Server.ServerMain>();
                 m_server.RegisterMob(this);
             }
             
             m_animator = this.GetComponent<Animator>();
             m_navAgent = this.GetComponent<NavMeshAgent>();
-            this.ID = this.GetInstanceID();
         }
 
         /// <summary>

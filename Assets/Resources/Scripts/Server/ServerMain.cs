@@ -120,20 +120,17 @@ namespace Realms.Server
             {
                 case NetworkEventType.ConnectEvent:
                     {
-                        Debug.Log(string.Format("Server: ConnectEvent from host {0} connection {1}", hostId, connectionId));
                     }
                     break;
 
                 case NetworkEventType.DataEvent:
                     {
-                        Debug.Log(string.Format("Server: DataEvent from host {0} connection {1}", hostId, connectionId));
                         HandlePacketRecieved(hostId, connectionId, recBuffer, dataSize);
                     }
                     break;
 
                 case NetworkEventType.DisconnectEvent:
                     {
-                        Debug.Log(string.Format("Server: DisconnectEvent from host {0} connection {1}", hostId, connectionId));
                         HandlePlayerDisconnect(hostId, connectionId);
                     }
                     break;
@@ -353,8 +350,6 @@ namespace Realms.Server
 
             player.CurrentPosition = packet.GetPosition();
 
-            Debug.Log(string.Format("Server: Revieved player movement packet from {0}, target {1}", connectionId, packet.GetPosition().ToString()));
-
             var movementPacket = new Server.Packet.PlayerMovePacket(connectionId, packet.GetPosition());
             QueuePacketAllExcluding(movementPacket, new int[] { connectionId });
         }
@@ -391,21 +386,28 @@ namespace Realms.Server
                 return;
             }
 
+            Debug.Log("Server: Player Attack Packet Received - 1");
+
             var mob = m_mobs.FirstOrDefault(x => x.ID == packet.MobID);
             if (mob == null)
             {
                 return;
             }
 
+            Debug.Log("Server: Player Attack Packet Received - 2");
+
             mob.Health -= packet.Damage;
 
             if (mob.Health > 0)
             {
+                Debug.Log("Server: Sending Damage Packet");
                 var mobDamagePacket = new Server.Packet.MobDamagedPacket(mob.ID, mob.Health);
                 QueuePacketAll(mobDamagePacket);
             }
             else
             {
+                Debug.Log("Server: Sending Death Packet");
+
                 // It's dead mate
                 var mobDeathPacket = new Server.Packet.MobDeathPacket(mob.ID);
                 QueuePacketAll(mobDeathPacket);
@@ -423,10 +425,9 @@ namespace Realms.Server
         public void RegisterMob(Realms.Common.Mob mob)
         {
             m_mobs.Add(mob);
-            foreach (var player in m_players)
-            {
-                SendMobSpawnPackets(player.ConnectionId);
-            }
+
+            var mobSpawnPacket = new Server.Packet.MobSpawnPacket(mob);
+            QueuePacketAll(mobSpawnPacket);
         }
 
         /// <summary>
