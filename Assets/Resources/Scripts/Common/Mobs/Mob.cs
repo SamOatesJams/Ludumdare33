@@ -32,7 +32,25 @@ namespace Realms.Common
         /// <summary>
         /// 
         /// </summary>
-        public int Health { get; set; }
+        private int m_health = -1;
+        public int Health
+        {
+            get { return m_health; }
+            set
+            {
+                if (m_health == -1)
+                {
+                    HealthSlider.maxValue = value;
+                }
+
+                m_health = value;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public UnityEngine.UI.Slider HealthSlider = null;
 
         /// <summary>
         /// 
@@ -53,6 +71,11 @@ namespace Realms.Common
         /// 
         /// </summary>
         private MobState m_state = MobState.Idle;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private float m_lastAttackTime = 0.0f;
 
         /// <summary>
         /// 
@@ -88,7 +111,7 @@ namespace Realms.Common
         /// </summary>
         private void FixedUpdate()
         {
-            if (m_navAgent.velocity.sqrMagnitude > float.Epsilon)
+            if (m_navAgent.velocity.sqrMagnitude > float.Epsilon && m_state == MobState.Idle)
             {
                 m_state = MobState.Walk;
             }
@@ -119,11 +142,23 @@ namespace Realms.Common
                             }
                         }
                         break;
+                    case MobState.Attack:
+                        {
+                            if (Time.time - m_lastAttackTime >= 10.0f)
+                            {
+                                m_state = MobState.Idle;
+                            }
+                        }
+                        break;
                 }
             }
             else
             {
-                if (m_navAgent.velocity.sqrMagnitude > float.Epsilon)
+                if (m_state == MobState.Attack)
+                {
+                    // Do Attack animation
+                }
+                else if (m_navAgent.velocity.sqrMagnitude > float.Epsilon)
                 {
                     m_animator.SetBool("IsWalking", true);
                 }
@@ -166,8 +201,13 @@ namespace Realms.Common
         /// <param name="packet"></param>
         public void HandleDamagePacket(MobDamagedPacket packet)
         {
+            m_state = MobState.Attack;
+            m_lastAttackTime = Time.time;
+
+            this.HealthSlider.gameObject.SetActive(true);
+            this.HealthSlider.value = packet.NewHealth;
+
             this.Health = packet.NewHealth;
-            // UI of health bar
         }
 
         /// <summary>
