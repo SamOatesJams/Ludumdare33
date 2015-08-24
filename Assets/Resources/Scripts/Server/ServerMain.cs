@@ -55,6 +55,11 @@ namespace Realms.Server
         private HashSet<PlayerData> m_players = new HashSet<PlayerData>();
 
         /// <summary>
+        /// All offline players
+        /// </summary>
+        private HashSet<PlayerData> m_offlinePlayers = new HashSet<PlayerData>();
+
+        /// <summary>
         /// All queued packets to be sent to players
         /// </summary>
         private HashSet<ServerPacket> m_packetQueue = new HashSet<ServerPacket>();
@@ -150,6 +155,7 @@ namespace Realms.Server
             if (player != null)
             {
                 m_players.Remove(player);
+                m_offlinePlayers.Add(player);
 
                 var disconnectPacket = new Server.Packet.PlayerDisconnectPacket(player.ConnectionId);
                 QueuePacketAll(disconnectPacket);
@@ -274,6 +280,8 @@ namespace Realms.Server
 
             var allowConnection = true;
             var errorMessage = "None";
+
+            // Check for already existing username
             if (m_players.Any(x => x.Username.Equals(packet.Username, StringComparison.OrdinalIgnoreCase)))
             {
                 // Username already in use.
@@ -287,8 +295,17 @@ namespace Realms.Server
 
             if (allowConnection)
             {
+                var spawnPoint = new Vector3(-280.0f, 47.5f, 338.0f);
+
+                // Try get an offline player and get their location
+                var offlinePlayer = m_offlinePlayers.FirstOrDefault(x => x.Username.Equals(packet.Username, StringComparison.OrdinalIgnoreCase));
+                if (offlinePlayer != null)
+                {
+                    spawnPoint = offlinePlayer.CurrentPosition;
+                }
+
                 // Player is valid, store them
-                var newPlayerData = new PlayerData(connectionId, packet.Username, new Vector3(-280.0f, 47.5f, 338.0f));
+                var newPlayerData = new PlayerData(connectionId, packet.Username, spawnPoint);
                 
                 // Player is valid, tell all other players about them.
                 var playerJoinPacket = new Server.Packet.PlayerJoinPacket(connectionId, newPlayerData.Username, newPlayerData.CurrentPosition);
@@ -301,6 +318,12 @@ namespace Realms.Server
                 }
 
                 m_players.Add(newPlayerData);
+
+                if (offlinePlayer != null)
+                {
+                    m_offlinePlayers.Remove(offlinePlayer);
+                }
+
                 SendMobSpawnPackets(newPlayerData.ConnectionId);
             }
 
