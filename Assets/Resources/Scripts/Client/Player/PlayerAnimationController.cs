@@ -28,7 +28,7 @@ namespace Realms.Client.Player
         /// 
         /// </summary>
         private Animator m_animator = null;
-
+        
         /// <summary>
         /// 
         /// </summary>

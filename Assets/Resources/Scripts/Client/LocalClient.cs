@@ -88,6 +88,11 @@ namespace Realms.Client
         /// All living mobs
         /// </summary>
         private Dictionary<int, Common.Mob> m_mobs = new Dictionary<int, Common.Mob>();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private bool m_isSetup = false;
         #endregion
 
         /// <summary>
@@ -125,6 +130,7 @@ namespace Realms.Client
             m_packetHandlers[typeof(Server.Packet.MobDeathPacket)] = OnMobDeathPacket;
 
             SetupUsername();
+            m_isSetup = true;
         }
 
         /// <summary>
@@ -153,6 +159,11 @@ namespace Realms.Client
         /// </summary>
         private void FixedUpdate()
         {
+            if (!m_isSetup)
+            {
+                return;
+            }
+
             const int bufferSize = 1024;
 
             int hostId, connectionId, channelId, dataSize;
@@ -203,6 +214,7 @@ namespace Realms.Client
             byte error;
             NetworkTransport.Disconnect(m_genericHostId, m_connectionId, out error);
             NetworkTransport.Shutdown();
+            m_isSetup = false;
         }
 
         /// <summary>
@@ -259,7 +271,10 @@ namespace Realms.Client
                 {
                     formatter.Serialize(stream, packet);
                     var data = stream.ToArray();
-                    NetworkTransport.Send(hostId, connectionId, m_communicationChannel, data, data.Length, out error);
+                    if (!NetworkTransport.Send(hostId, connectionId, m_communicationChannel, data, data.Length, out error) || error != 0)
+                    {
+                        Debug.LogError("Failed to send packet");
+                    }
                 }
             }
 
