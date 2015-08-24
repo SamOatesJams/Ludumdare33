@@ -118,8 +118,11 @@ namespace Realms.Client
             m_packetHandlers[typeof(Server.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
             m_packetHandlers[typeof(Server.Packet.PlayerDisconnectPacket)] = OnPlayerDisconnectPacket;
             m_packetHandlers[typeof(Server.Packet.PlayerChatPacket)] = OnPlayerChatPacket;
+
             m_packetHandlers[typeof(Server.Packet.MobSpawnPacket)] = OnMobSpawnPacket;
             m_packetHandlers[typeof(Server.Packet.MobMovePacket)] = OnMobMovePacket;
+            m_packetHandlers[typeof(Server.Packet.MobDamagedPacket)] = OnMobDamagedPacket;
+            m_packetHandlers[typeof(Server.Packet.MobDeathPacket)] = OnMobDeathPacket;
 
             SetupUsername();
         }
@@ -294,8 +297,13 @@ namespace Realms.Client
                 Application.LoadLevel("Menu");
             }
 
+            var navAgent = this.GetComponent<NavMeshAgent>();
+            navAgent.enabled = false;
+
             var spawnPoint = packet.GetPosition();
             this.transform.position = spawnPoint;
+
+            navAgent.enabled = true;
         }
 
         /// <summary>
@@ -452,6 +460,54 @@ namespace Realms.Client
 
             var mob = m_mobs[packet.MobID];
             mob.HandleMovePacket(packet);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnMobDamagedPacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.MobDamagedPacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            if (!m_mobs.ContainsKey(packet.MobID))
+            {
+                return;
+            }
+
+            var mob = m_mobs[packet.MobID];
+            mob.HandleDamagePacket(packet);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnMobDeathPacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Server.Packet.MobDeathPacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            if (!m_mobs.ContainsKey(packet.MobID))
+            {
+                return;
+            }
+
+            var mob = m_mobs[packet.MobID];
+            m_mobs.Remove(mob.ID);
+
+            mob.HandleDeathPacket(packet);
         }
     }
 }

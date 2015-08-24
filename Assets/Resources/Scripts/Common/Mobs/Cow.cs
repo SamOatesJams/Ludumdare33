@@ -8,6 +8,7 @@ namespace Realms.Common
         void Awake()
         {
             this.MobType = "Cow";
+            this.Health = 10;
         }
     }
 }

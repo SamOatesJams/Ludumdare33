@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Realms.Server.Packet;
+using System;
 
 namespace Realms.Common
 {
@@ -26,6 +28,11 @@ namespace Realms.Common
         /// 
         /// </summary>
         public string MobType { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int Health { get; set; }
 
         /// <summary>
         /// 
@@ -145,6 +152,26 @@ namespace Realms.Common
         {
             m_navAgent.SetDestination(packet.GetPosition());
             m_animator.SetBool("IsWalking", true);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="packet"></param>
+        public void HandleDamagePacket(MobDamagedPacket packet)
+        {
+            this.Health = packet.NewHealth;
+            // UI of health bar
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="packet"></param>
+        public void HandleDeathPacket(MobDeathPacket packet)
+        {
+            // Death animation
+            GameObject.Destroy(this.gameObject);
         }
     }
 }

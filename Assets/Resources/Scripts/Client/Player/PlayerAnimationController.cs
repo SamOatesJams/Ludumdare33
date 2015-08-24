@@ -17,6 +17,11 @@ namespace Realms.Client.Player
         /// <summary>
         /// 
         /// </summary>
+        public bool IsAttacking { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         private NavMeshAgent m_navAgent = null;
 
         /// <summary>

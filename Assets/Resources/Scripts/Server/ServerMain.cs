@@ -100,6 +100,7 @@ namespace Realms.Server
             m_packetHandlers[typeof(Client.Packet.PlayerConnectPacket)] = OnPlayerConnectPacket;
             m_packetHandlers[typeof(Client.Packet.PlayerMovePacket)] = OnPlayerMovePacket;
             m_packetHandlers[typeof(Client.Packet.PlayerChatSendPacket)] = OnPlayerChatSendPacket;
+            m_packetHandlers[typeof(Client.Packet.PlayerAttackPacket)] = OnPlayerAttackPacket;
         }
 
         /// <summary>
@@ -374,6 +375,45 @@ namespace Realms.Server
 
             var chatPacket = new Server.Packet.PlayerChatPacket(connectionId, packet.ChatMessage);
             QueuePacketAllExcluding(chatPacket, new int[] { connectionId });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rawPacket"></param>
+        /// <param name="hostId"></param>
+        /// <param name="connectionId"></param>
+        private void OnPlayerAttackPacket(IPacket rawPacket, int hostId, int connectionId)
+        {
+            var packet = rawPacket as Client.Packet.PlayerAttackPacket;
+            if (packet == null)
+            {
+                return;
+            }
+
+            var mob = m_mobs.FirstOrDefault(x => x.ID == packet.MobID);
+            if (mob == null)
+            {
+                return;
+            }
+
+            mob.Health -= packet.Damage;
+
+            if (mob.Health > 0)
+            {
+                var mobDamagePacket = new Server.Packet.MobDamagedPacket(mob.ID, mob.Health);
+                QueuePacketAll(mobDamagePacket);
+            }
+            else
+            {
+                // It's dead mate
+                var mobDeathPacket = new Server.Packet.MobDeathPacket(mob.ID);
+                QueuePacketAll(mobDeathPacket);
+
+                m_mobs.Remove(mob);
+                var spawner = mob.SpawnArea.GetComponent<Server.SpawnArea>();
+                spawner.RequestSpawn();
+            }
         }
 
         /// <summary>
