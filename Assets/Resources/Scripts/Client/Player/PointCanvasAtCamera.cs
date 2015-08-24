@@ -29,7 +29,10 @@ namespace Realms.Client.Player
         /// </summary>
         void Update()
         {
-            m_canvas.transform.LookAt(m_camera.transform);
+            if (m_canvas != null && m_camera != null)
+            {
+                m_canvas.transform.LookAt(m_camera.transform);
+            }
         }
     }
 }

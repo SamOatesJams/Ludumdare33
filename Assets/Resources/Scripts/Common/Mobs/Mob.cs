@@ -42,6 +42,11 @@ namespace Realms.Common
                 {
                     HealthSlider.maxValue = value;
                 }
+                else if (value < m_health)
+                {
+                    m_state = MobState.Attack;
+                    m_lastAttackTime = Time.time;
+                }
 
                 m_health = value;
             }
@@ -201,9 +206,6 @@ namespace Realms.Common
         /// <param name="packet"></param>
         public void HandleDamagePacket(MobDamagedPacket packet)
         {
-            m_state = MobState.Attack;
-            m_lastAttackTime = Time.time;
-
             this.HealthSlider.gameObject.SetActive(true);
             this.HealthSlider.value = packet.NewHealth;
 
