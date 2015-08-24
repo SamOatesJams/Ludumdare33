@@ -43,8 +43,8 @@ namespace Realms.Server.Packet
             this.AllowConnection = allowConnection;
             this.ErrorMessage = errorMessage;
             this.PositionX = spawnPosition.x;
-            this.PositionX = spawnPosition.y;
-            this.PositionX = spawnPosition.z;
+            this.PositionY = spawnPosition.y;
+            this.PositionZ = spawnPosition.z;
         }
 
         /// <summary>
