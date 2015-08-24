@@ -405,7 +405,7 @@ namespace Realms.Client
                 return;
             }
 
-            var mobTypePrefab = this.MobPrefabs.FirstOrDefault(x => x.MobType.Equals(packet.MobType, StringComparison.OrdinalIgnoreCase));
+            var mobTypePrefab = this.MobPrefabs.FirstOrDefault(x => x.name.Equals(packet.MobType, StringComparison.OrdinalIgnoreCase));
             if (mobTypePrefab == null)
             {
                 // Mob type not registered on client
@@ -413,10 +413,9 @@ namespace Realms.Client
             }
 
             var spawnLocation = packet.GetPosition();
-            var newMob = (GameObject)GameObject.Instantiate(mobTypePrefab, spawnLocation, Quaternion.identity); // Initial rotation should be in spawn packet
-            var mobComponent = newMob.GetComponent<Common.Mob>();
-            mobComponent.ID = packet.ID;
-            m_mobs[packet.ID] = mobComponent;
+            var newMob = (Common.Mob)GameObject.Instantiate(mobTypePrefab, spawnLocation, Quaternion.identity); // Initial rotation should be in spawn packet
+            newMob.ID = packet.ID;
+            m_mobs[packet.ID] = newMob;
         }
 
         /// <summary>
