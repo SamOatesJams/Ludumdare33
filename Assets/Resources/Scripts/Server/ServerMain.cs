@@ -290,13 +290,10 @@ namespace Realms.Server
                 Debug.LogError(string.Format("Server: {0}", errorMessage));
             }
 
-            var handShakePacket = new Server.Packet.PlayerHandshakePacket(allowConnection, errorMessage);
-            QueuePacket(handShakePacket, connectionId);
+            var spawnPoint = new Vector3(-280.0f, 47.5f, 338.0f);
 
             if (allowConnection)
             {
-                var spawnPoint = new Vector3(-280.0f, 47.5f, 338.0f);
-
                 // Try get an offline player and get their location
                 var offlinePlayer = m_offlinePlayers.FirstOrDefault(x => x.Username.Equals(packet.Username, StringComparison.OrdinalIgnoreCase));
                 if (offlinePlayer != null)
@@ -326,6 +323,9 @@ namespace Realms.Server
 
                 SendMobSpawnPackets(newPlayerData.ConnectionId);
             }
+
+            var handShakePacket = new Server.Packet.PlayerHandshakePacket(allowConnection, errorMessage, spawnPoint);
+            QueuePacket(handShakePacket, connectionId);
 
             Debug.Log(string.Format("Server: Revieved player connection from {0}", packet.Username));
         }

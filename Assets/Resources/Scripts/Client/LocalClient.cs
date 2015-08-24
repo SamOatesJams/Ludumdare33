@@ -41,6 +41,11 @@ namespace Realms.Client
         /// 
         /// </summary>
         public Common.Mob[] MobPrefabs = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Transform MobContainer = null;
         #endregion
 
         #region Private Members
@@ -132,8 +137,11 @@ namespace Realms.Client
             }
             else
             {
-                // Random Name
-                this.Username = string.Format("Player_{0}", UnityEngine.Random.Range(0, int.MaxValue));
+                if (string.IsNullOrEmpty(this.Username))
+                {
+                    // Random Name
+                    this.Username = string.Format("Player_{0}", UnityEngine.Random.Range(0, int.MaxValue));
+                }
             }
         }
 
@@ -285,6 +293,9 @@ namespace Realms.Client
                 // TODO: Show error ui
                 Application.LoadLevel("Menu");
             }
+
+            var spawnPoint = packet.GetPosition();
+            this.transform.position = spawnPoint;
         }
 
         /// <summary>
@@ -416,6 +427,8 @@ namespace Realms.Client
             var newMob = (Common.Mob)GameObject.Instantiate(mobTypePrefab, spawnLocation, Quaternion.identity); // Initial rotation should be in spawn packet
             newMob.ID = packet.ID;
             m_mobs[packet.ID] = newMob;
+
+            newMob.transform.parent = this.MobContainer;
         }
 
         /// <summary>

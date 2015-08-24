@@ -19,14 +19,41 @@ namespace Realms.Server.Packet
         public string ErrorMessage { get; private set; }
 
         /// <summary>
+        /// Spawn X position
+        /// </summary>
+        public float PositionX { get; private set; }
+
+        /// <summary>
+        /// Spawn Y position
+        /// </summary>
+        public float PositionY { get; private set; }
+
+        /// <summary>
+        /// Spawn Z position
+        /// </summary>
+        public float PositionZ { get; private set; }
+
+        /// <summary>
         /// Class constructor
         /// </summary>
         /// <param name="allowConnection"></param>
         /// <param name="errorMessage"></param>
-        public PlayerHandshakePacket(bool allowConnection, string errorMessage) : base(typeof(PlayerHandshakePacket))
+        public PlayerHandshakePacket(bool allowConnection, string errorMessage, Vector3 spawnPosition) : base(typeof(PlayerHandshakePacket))
         {
             this.AllowConnection = allowConnection;
             this.ErrorMessage = errorMessage;
+            this.PositionX = spawnPosition.x;
+            this.PositionX = spawnPosition.y;
+            this.PositionX = spawnPosition.z;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public Vector3 GetPosition()
+        {
+            return new Vector3(this.PositionX, this.PositionY, this.PositionZ);
         }
     }
 }
