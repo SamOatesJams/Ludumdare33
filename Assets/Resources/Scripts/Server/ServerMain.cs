@@ -182,7 +182,6 @@ namespace Realms.Server
                     {
                         // Send to specific player
                         NetworkTransport.Send(m_genericHostId, serverPacket.ConnectionId, m_communicationChannel, data, data.Length, out error);
-                        Debug.Log(string.Format("Server: Sending Packet {0} to connection {1}", packet.PacketType.ToString(), serverPacket.ConnectionId));
                     }
                     else if (packetType == ServerPacketType.ToAllExcluding)
                     {
@@ -190,7 +189,6 @@ namespace Realms.Server
                         {
                             // Send to all players, excluding some listed
                             NetworkTransport.Send(m_genericHostId, player.ConnectionId, m_communicationChannel, data, data.Length, out error);
-                            Debug.Log(string.Format("Server: Sending Packet {0} to connection {1}", packet.PacketType.ToString(), player.ConnectionId));
                         }
                     }
                     else if (packetType == ServerPacketType.ToAll)
@@ -199,7 +197,6 @@ namespace Realms.Server
                         {
                             // Send to all players
                             NetworkTransport.Send(m_genericHostId, player.ConnectionId, m_communicationChannel, data, data.Length, out error);
-                            Debug.Log(string.Format("Server: Sending Packet {0} to connection {1}", packet.PacketType.ToString(), player.ConnectionId));
                         }
                     }
                 }
@@ -394,20 +391,15 @@ namespace Realms.Server
                 return;
             }
 
-            Debug.Log("Server: Player Attack Packet Received - 2");
-
             mob.Health -= packet.Damage;
 
             if (mob.Health > 0)
             {
-                Debug.Log("Server: Sending Damage Packet");
                 var mobDamagePacket = new Server.Packet.MobDamagedPacket(mob.ID, mob.Health);
                 QueuePacketAll(mobDamagePacket);
             }
             else
             {
-                Debug.Log("Server: Sending Death Packet");
-
                 // It's dead mate
                 var mobDeathPacket = new Server.Packet.MobDeathPacket(mob.ID);
                 QueuePacketAll(mobDeathPacket);
