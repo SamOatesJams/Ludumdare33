@@ -57,7 +57,7 @@ namespace Realms.Client.Player
                     {
                         m_playerWalkingToAttack = false;
                         m_playerAttacking = true;
-                        m_attackStartTime = Time.time + 2.0f;
+                        m_attackStartTime = Time.time - 1.0f;
                     }
                     else
                     {
@@ -77,7 +77,7 @@ namespace Realms.Client.Player
                     var distance = (mobLocation - myLocation).magnitude;
                     if (distance <= 2.0f)
                     {
-                        if (Time.time - m_attackStartTime >= 2.0f)
+                        if (Time.time - m_attackStartTime >= 1.0f)
                         {
                             var attackPacket = new Client.Packet.PlayerAttackPacket(m_mobToAttack.ID, UnityEngine.Random.Range(0, 3));
                             m_localClient.QueuePacket(attackPacket);
